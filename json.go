@@ -26,11 +26,35 @@ func main() {
 			log.Fatalf("unmarshal json failed, %s", err)
 		}
 
-		JSONPretty(ret, "", false, false)
+		JSONPretty(ret, &prettyInfo{})
 	}
 }
 
-func JSONPretty(ret interface{}, indent string, fromMap bool, needComma bool) {
+// control output format
+type prettyInfo struct {
+	indent    string
+	fromMap   bool
+	needComma bool
+}
+
+func (p *prettyInfo) getHeadIndent() string {
+	var headIndent string
+	if !p.fromMap {
+		headIndent = p.indent
+	}
+
+	return headIndent
+}
+
+func (p *prettyInfo) getTail() string {
+	var tail string
+	if p.needComma {
+		tail = ","
+	}
+	return tail
+}
+
+func JSONPretty(ret interface{}, pretty *prettyInfo) {
 	if ret == nil {
 		fmt.Printf("null\n")
 		return
@@ -39,33 +63,28 @@ func JSONPretty(ret interface{}, indent string, fromMap bool, needComma bool) {
 	t := reflect.TypeOf(ret)
 	switch t.Kind() {
 	case reflect.Map:
-		displayMap(ret.(map[string]interface{}), indent, fromMap, needComma)
+		displayMap(ret.(map[string]interface{}), pretty)
 	case reflect.Slice:
-		displaySlice(ret.([]interface{}), indent, fromMap, needComma)
+		displaySlice(ret.([]interface{}), pretty)
 	case reflect.String:
-		displayString(ret.(string), indent, fromMap, needComma)
+		displayString(ret.(string), pretty)
 	case reflect.Float32:
-		displayFloat64(float64(ret.(float32)), indent, fromMap, needComma)
+		displayFloat64(float64(ret.(float32)), pretty)
 	case reflect.Float64:
-		displayFloat64(ret.(float64), indent, fromMap, needComma)
+		displayFloat64(ret.(float64), pretty)
 	case reflect.Int:
-		displayInt(ret.(int), indent, fromMap, needComma)
+		displayInt(ret.(int), pretty)
 	case reflect.Bool:
-		displayBool(ret.(bool), indent, fromMap, needComma)
+		displayBool(ret.(bool), pretty)
 	default:
 		fmt.Printf("ERROR: invalid type, %T\n", ret)
 		os.Exit(1)
 	}
 }
 
-func displayMap(ret map[string]interface{}, indent string, fromMap bool, needComma bool) {
-	newIndent := indent + IndentLevel
-	var headIndent string
-	if !fromMap {
-		headIndent = indent
-	}
-
-	fmt.Printf("%s{\n", headIndent)
+func displayMap(ret map[string]interface{}, pretty *prettyInfo) {
+	newIndent := pretty.indent + IndentLevel
+	fmt.Printf("%s{\n", pretty.getHeadIndent())
 
 	keys := make([]string, 0, len(ret))
 	for k := range ret {
@@ -76,79 +95,46 @@ func displayMap(ret map[string]interface{}, indent string, fromMap bool, needCom
 	for i, k := range keys {
 		v := ret[k]
 		fmt.Printf("%s%q: ", newIndent, k)
-		JSONPretty(v, newIndent, true, i != len(keys)-1)
+		JSONPretty(v, &prettyInfo{indent: newIndent, fromMap: true, needComma: i != len(keys)-1})
 	}
 
-	var tail string
-	if needComma {
-		tail = ","
-	}
-	fmt.Printf("%s}%s\n", indent, tail)
+	fmt.Printf("%s}%s\n", pretty.indent, pretty.getTail())
 }
 
-func displaySlice(ret []interface{}, indent string, needIndent bool, needComma bool) {
-	newIndent := indent + IndentLevel
+func displaySlice(ret []interface{}, pretty *prettyInfo) {
+	newIndent := pretty.indent + IndentLevel
 
 	fmt.Printf("[\n")
 	for i, v := range ret {
-		JSONPretty(v, newIndent, false, i != len(ret)-1)
+		JSONPretty(v, &prettyInfo{indent: newIndent, fromMap: false, needComma: i != len(ret)-1})
 	}
 	var tail string
-	if needComma {
+	if pretty.needComma {
 		tail = ","
 	}
-	fmt.Printf("%s]%s\n", indent, tail)
+	fmt.Printf("%s]%s\n", pretty.indent, tail)
 }
 
-func displayString(s string, indent string, fromMap bool, needComma bool) {
-	var headIndent, tail string
-	if !fromMap {
-		headIndent = indent
-	}
-	if needComma {
-		tail = ","
-	}
-	fmt.Printf("%s%q%s\n", headIndent, s, tail)
+func displayString(s string, pretty *prettyInfo) {
+	fmt.Printf("%s%q%s\n", pretty.getHeadIndent(), s, pretty.getTail())
 }
 
-func displayFloat64(f float64, indent string, fromMap bool, needComma bool) {
-	var headIndent, tail string
-	if !fromMap {
-		headIndent = indent
-	}
-	if needComma {
-		tail = ","
-	}
-
+func displayFloat64(f float64, pretty *prettyInfo) {
 	floatIsInt := func(ff float64) bool {
 		return float64(int(ff)) == ff
 	}
 
 	if floatIsInt(f) {
-		fmt.Printf("%s%d%s\n", headIndent, int(f), tail)
+		fmt.Printf("%s%d%s\n", pretty.getHeadIndent(), int(f), pretty.getTail())
 	} else {
-		fmt.Printf("%s%f%s\n", headIndent, f, tail)
+		fmt.Printf("%s%f%s\n", pretty.getHeadIndent(), f, pretty.getTail())
 	}
 }
 
-func displayInt(f int, indent string, fromMap bool, needComma bool) {
-	var headIndent, tail string
-	if !fromMap {
-		headIndent = indent
-	}
-	if needComma {
-		tail = ","
-	}
-	fmt.Printf("%s%d%s\n", headIndent, f, tail)
+func displayInt(f int, pretty *prettyInfo) {
+	fmt.Printf("%s%d%s\n", pretty.getHeadIndent(), f, pretty.getTail())
 }
 
-func displayBool(f bool, indent string, fromMap bool, needComma bool) {
-	var headIndent, tail string
-	if !fromMap {
-		headIndent = indent
-	}
-	if needComma {
-		tail = ","
-	}
-	fmt.Printf("%s%v%s\n", headIndent, f, tail)
+func displayBool(f bool, pretty *prettyInfo) {
+	fmt.Printf("%s%v%s\n", pretty.getHeadIndent(), f, pretty.getTail())
 }
