@@ -26,11 +26,11 @@ func main() {
 			log.Fatalf("unmarshal json failed, %s", err)
 		}
 
-		JSONPretty(ret, "", false)
+		JSONPretty(ret, "", false, false)
 	}
 }
 
-func JSONPretty(ret interface{}, indent string, fromMap bool) {
+func JSONPretty(ret interface{}, indent string, fromMap bool, needComma bool) {
 	if ret == nil {
 		fmt.Printf("null\n")
 		return
@@ -39,26 +39,26 @@ func JSONPretty(ret interface{}, indent string, fromMap bool) {
 	t := reflect.TypeOf(ret)
 	switch t.Kind() {
 	case reflect.Map:
-		displayMap(ret.(map[string]interface{}), indent, fromMap)
+		displayMap(ret.(map[string]interface{}), indent, fromMap, needComma)
 	case reflect.Slice:
-		displaySlice(ret.([]interface{}), indent, fromMap)
+		displaySlice(ret.([]interface{}), indent, fromMap, needComma)
 	case reflect.String:
-		displayString(ret.(string), indent, fromMap)
+		displayString(ret.(string), indent, fromMap, needComma)
 	case reflect.Float32:
-		displayFloat64(float64(ret.(float32)), indent, fromMap)
+		displayFloat64(float64(ret.(float32)), indent, fromMap, needComma)
 	case reflect.Float64:
-		displayFloat64(ret.(float64), indent, fromMap)
+		displayFloat64(ret.(float64), indent, fromMap, needComma)
 	case reflect.Int:
-		displayInt(ret.(int), indent, fromMap)
+		displayInt(ret.(int), indent, fromMap, needComma)
 	case reflect.Bool:
-		displayBool(ret.(bool), indent, fromMap)
+		displayBool(ret.(bool), indent, fromMap, needComma)
 	default:
 		fmt.Printf("ERROR: invalid type, %T\n", ret)
 		os.Exit(1)
 	}
 }
 
-func displayMap(ret map[string]interface{}, indent string, fromMap bool) {
+func displayMap(ret map[string]interface{}, indent string, fromMap bool, needComma bool) {
 	newIndent := indent + IndentLevel
 	var headIndent string
 	if !fromMap {
@@ -73,36 +73,51 @@ func displayMap(ret map[string]interface{}, indent string, fromMap bool) {
 	}
 	sort.Strings(keys)
 
-	for _, k := range keys {
+	for i, k := range keys {
 		v := ret[k]
 		fmt.Printf("%s%q: ", newIndent, k)
-		JSONPretty(v, newIndent, true)
+		JSONPretty(v, newIndent, true, i != len(keys)-1)
 	}
-	fmt.Printf("%s}\n", indent)
+
+	var tail string
+	if needComma {
+		tail = ","
+	}
+	fmt.Printf("%s}%s\n", indent, tail)
 }
 
-func displaySlice(ret []interface{}, indent string, needIndent bool) {
+func displaySlice(ret []interface{}, indent string, needIndent bool, needComma bool) {
 	newIndent := indent + IndentLevel
 
 	fmt.Printf("[\n")
-	for _, v := range ret {
-		JSONPretty(v, newIndent, false)
+	for i, v := range ret {
+		JSONPretty(v, newIndent, false, i != len(ret)-1)
 	}
-	fmt.Printf("%s]\n", indent)
+	var tail string
+	if needComma {
+		tail = ","
+	}
+	fmt.Printf("%s]%s\n", indent, tail)
 }
 
-func displayString(s string, indent string, fromMap bool) {
-	var headIndent string
+func displayString(s string, indent string, fromMap bool, needComma bool) {
+	var headIndent, tail string
 	if !fromMap {
 		headIndent = indent
 	}
-	fmt.Printf("%s%q\n", headIndent, s)
+	if needComma {
+		tail = ","
+	}
+	fmt.Printf("%s%q%s\n", headIndent, s, tail)
 }
 
-func displayFloat64(f float64, indent string, fromMap bool) {
-	var headIndent string
+func displayFloat64(f float64, indent string, fromMap bool, needComma bool) {
+	var headIndent, tail string
 	if !fromMap {
 		headIndent = indent
+	}
+	if needComma {
+		tail = ","
 	}
 
 	floatIsInt := func(ff float64) bool {
@@ -110,24 +125,30 @@ func displayFloat64(f float64, indent string, fromMap bool) {
 	}
 
 	if floatIsInt(f) {
-		fmt.Printf("%s%d\n", headIndent, int(f))
+		fmt.Printf("%s%d%s\n", headIndent, int(f), tail)
 	} else {
-		fmt.Printf("%s%f\n", headIndent, f)
+		fmt.Printf("%s%f%s\n", headIndent, f, tail)
 	}
 }
 
-func displayInt(f int, indent string, fromMap bool) {
-	var headIndent string
+func displayInt(f int, indent string, fromMap bool, needComma bool) {
+	var headIndent, tail string
 	if !fromMap {
 		headIndent = indent
 	}
-	fmt.Printf("%s%d\n", headIndent, f)
+	if needComma {
+		tail = ","
+	}
+	fmt.Printf("%s%d%s\n", headIndent, f, tail)
 }
 
-func displayBool(f bool, indent string, fromMap bool) {
-	var headIndent string
+func displayBool(f bool, indent string, fromMap bool, needComma bool) {
+	var headIndent, tail string
 	if !fromMap {
 		headIndent = indent
 	}
-	fmt.Printf("%s%v\n", headIndent, f)
+	if needComma {
+		tail = ","
+	}
+	fmt.Printf("%s%v%s\n", headIndent, f, tail)
 }
