@@ -4,30 +4,54 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"reflect"
 	"sort"
 )
 
+var isVerbos bool
+
 const IndentLevel = "    "
 
 func main() {
-	scanner := bufio.NewScanner(os.Stdin)
+	reader := bufio.NewReader(os.Stdin)
 	for {
-		scanner.Scan()
-		text := scanner.Text()
-		if len(text) == 0 {
+		lineBytes, err := readLine(reader)
+		if err != nil && err == io.EOF {
+			break
+		}
+
+		if len(lineBytes) == 0 {
+			println("no input")
 			break
 		}
 
 		var ret interface{}
-		if err := json.Unmarshal([]byte(text), &ret); err != nil {
+		if err := json.Unmarshal(lineBytes, &ret); err != nil {
 			log.Fatalf("unmarshal json failed, %s", err)
 		}
 
 		JSONPretty(ret, &prettyInfo{})
 	}
+}
+
+func readLine(reader *bufio.Reader) ([]byte, error) {
+	lineBytes := make([]byte, 0, 4000)
+	for {
+		line, isPrefix, err := reader.ReadLine()
+		if err != nil && err != io.EOF {
+			log.Fatal("read line err:", err)
+		}
+
+		lineBytes = append(lineBytes, line...)
+		if !isPrefix {
+			break
+		}
+	}
+
+	return lineBytes, nil
 }
 
 // control output format
@@ -137,4 +161,10 @@ func displayInt(f int, pretty *prettyInfo) {
 
 func displayBool(f bool, pretty *prettyInfo) {
 	fmt.Printf("%s%v%s\n", pretty.getHeadIndent(), f, pretty.getTail())
+}
+
+func println(msg string) {
+	if isVerbos {
+		log.Println(msg)
+	}
 }
