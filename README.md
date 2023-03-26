@@ -1,7 +1,8 @@
 # JSON Command Line Tool
 
 * Usage:
-```
+
+```bash
 echo '{"a":1}' | json
 {
     "a": 1
