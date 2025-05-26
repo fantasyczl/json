@@ -24,7 +24,7 @@ func main() {
 		}
 
 		if len(lineBytes) == 0 {
-			println("no input")
+			logPrintln("no input")
 			break
 		}
 
@@ -160,7 +160,7 @@ func displayBool(f bool, pretty *prettyInfo) {
 	fmt.Printf("%s%v%s\n", pretty.getHeadIndent(), f, pretty.getTail())
 }
 
-func println(msg string) {
+func logPrintln(msg string) {
 	if isVerbos {
 		log.Println(msg)
 	}
