@@ -132,11 +132,8 @@ func displaySlice(ret []interface{}, pretty *prettyInfo) {
 	for i, v := range ret {
 		JSONPretty(v, &prettyInfo{indent: newIndent, fromMap: false, needComma: i != len(ret)-1})
 	}
-	var tail string
-	if pretty.needComma {
-		tail = ","
-	}
-	fmt.Printf("%s]%s\n", pretty.indent, tail)
+
+	fmt.Printf("%s]%s\n", pretty.indent, pretty.getTail())
 }
 
 func displayString(s string, pretty *prettyInfo) {
