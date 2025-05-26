@@ -1,5 +1,11 @@
 # JSON Command Line Tool
 
+* Installation:
+
+```bash
+go install github.com/fantasyczl/json@latest
+```
+
 * Usage:
 
 ```bash
